@@ -15,17 +15,27 @@ import { useFocusEffect } from '@react-navigation/native';
 import syncData from '../components/custom/SyncIcon';
 import { supabase } from '../lib/supabase';
 import NetInfo from '@react-native-community/netinfo';
-import { Ionicons } from '@expo/vector-icons'; // Add this import
+import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from "@clerk/clerk-expo";
+import { Redirect } from "expo-router";
 
 export default function HomePage() {
+  const { isSignedIn, isLoaded } = useAuth();
   const [saveCount, setSaveCount] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
-  const { setImageUri } = useImage(); // Get the setImageUri function
+  const { setImageUri } = useImage();
 
-  // Theme management
   const [theme, setTheme] = useState(Appearance.getColorScheme());
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn) {
+    return <Redirect href="/sign-in" />;
+  }
 
   useEffect(() => {
     const subscription = Appearance.addChangeListener(({ colorScheme }) => {
@@ -137,14 +147,17 @@ export default function HomePage() {
             Pending: {saveCount}
           </Text>
         </View>
-        <TouchableOpacity style={styles.circleButton} onPress={resetDeviceId}>
-          <Text style={styles.buttonText}>Reset ID</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('profile')}>
+          <Ionicons name="person-circle-outline" size={24} color={theme === 'dark' ? 'white' : 'black'} />
         </TouchableOpacity>
       </View>
 
       {loading && <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />}
       <TouchableOpacity style={styles.circleButton} onPress={openCamera}>
         <Text style={styles.buttonText}>Add Data</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.circleButton} onPress={resetDeviceId}>
+        <Text style={styles.buttonText}>Reset ID</Text>
       </TouchableOpacity>
     </View>
   );
